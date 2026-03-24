@@ -60,5 +60,30 @@ namespace LayerRemapper.Tests {
 
             Assert.That(hasLeftover, Is.True);
         }
+
+        [Test]
+        public void RemapMask_Everything_RemainsUnchanged() {
+            var mapping = new Dictionary<int, int> {
+                [11] = 14,
+                [14] = 11
+            };
+
+            var result = LayerMaskRemapper.RemapMask(-1, mapping);
+
+            Assert.That(result, Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void RemapMask_Swap_WhenBothSourceBitsSet_PreservesBothBits() {
+            var mapping = new Dictionary<int, int> {
+                [11] = 14,
+                [14] = 11
+            };
+
+            var source = (1 << 11) | (1 << 14);
+            var result = LayerMaskRemapper.RemapMask(source, mapping);
+
+            Assert.That(result, Is.EqualTo(source));
+        }
     }
 }

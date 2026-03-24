@@ -6,7 +6,13 @@ namespace LayerRemapper {
         /// <summary>Remaps enabled bits in <paramref name="mask"/> from old layer indices to new layer indices.</summary>
         /// <returns>A new mask with remapped bits while preserving unmapped bits.</returns>
         public static int RemapMask(int mask, IReadOnlyDictionary<int, int> remapTable) {
-            var result = mask;
+            // Unity uses -1 for LayerMask Everything; preserve this sentinel exactly.
+            if (mask == -1)
+                return -1;
+
+            var oldBitsToClear = 0;
+            var newBitsToSet = 0;
+
             foreach (var (oldLayer, newLayer) in remapTable) {
                 if (oldLayer < 0 || oldLayer > 31 || newLayer < 0 || newLayer > 31)
                     continue;
@@ -15,11 +21,11 @@ namespace LayerRemapper {
                 if ((mask & oldBit) == 0)
                     continue;
 
-                result &= ~oldBit;
-                result |= 1 << newLayer;
+                oldBitsToClear |= oldBit;
+                newBitsToSet |= 1 << newLayer;
             }
 
-            return result;
+            return (mask & ~oldBitsToClear) | newBitsToSet;
         }
 
         /// <summary>Checks whether <paramref name="mask"/> still contains any bit from <paramref name="oldLayers"/>.</summary>
