@@ -7,9 +7,7 @@ namespace LayerRemapper {
         /// <returns>A new mask with remapped bits while preserving unmapped bits.</returns>
         public static int RemapMask(int mask, IReadOnlyDictionary<int, int> remapTable) {
             var result = mask;
-            foreach (var pair in remapTable) {
-                var oldLayer = pair.Key;
-                var newLayer = pair.Value;
+            foreach (var (oldLayer, newLayer) in remapTable) {
                 if (oldLayer < 0 || oldLayer > 31 || newLayer < 0 || newLayer > 31)
                     continue;
 
@@ -28,7 +26,7 @@ namespace LayerRemapper {
         /// <returns><c>true</c> when at least one old layer bit is still present; otherwise, <c>false</c>.</returns>
         public static bool ContainsAnyOldLayerBit(int mask, IEnumerable<int> oldLayers) {
             foreach (var layer in oldLayers) {
-                if (layer < 0 || layer > 31)
+                if (layer is < 0 or > 31)
                     continue;
 
                 if ((mask & (1 << layer)) != 0)

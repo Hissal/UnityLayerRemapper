@@ -23,7 +23,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             return Execute(entries, false, true);
         }
 
-        private static LayerRemapReport Execute(IReadOnlyList<LayerRemapEntry> entries, bool applyChanges, bool validationOnly) {
+        static LayerRemapReport Execute(IReadOnlyList<LayerRemapEntry> entries, bool applyChanges, bool validationOnly) {
             var report = new LayerRemapReport {
                 DryRun = !applyChanges,
                 IsValidationOnly = validationOnly
@@ -45,7 +45,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             return report;
         }
 
-        private static Dictionary<int, int> BuildRemapTable(IReadOnlyList<LayerRemapEntry> entries, LayerRemapReport report) {
+        static Dictionary<int, int> BuildRemapTable(IReadOnlyList<LayerRemapEntry> entries, LayerRemapReport report) {
             var remapTable = new Dictionary<int, int>();
             for (var i = 0; i < entries.Count; i++) {
                 var entry = entries[i];
@@ -63,7 +63,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             return remapTable;
         }
 
-        private static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
             foreach (var guid in prefabGuids) {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
@@ -93,7 +93,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        private static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var previousSetup = EditorSceneManager.GetSceneManagerSetup();
             try {
                 var sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets" });
@@ -132,7 +132,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        private static void ProcessOtherAssets(IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessOtherAssets(IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var allPaths = AssetDatabase.GetAllAssetPaths();
             var scannedPaths = new HashSet<string>();
             foreach (var path in allPaths) {
@@ -186,7 +186,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        private static bool ProcessGameObjectHierarchy(GameObject root, IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static bool ProcessGameObjectHierarchy(GameObject root, IReadOnlyDictionary<int, int> remapTable, IEnumerable<int> oldLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var changedAny = false;
             var transforms = root.GetComponentsInChildren<Transform>(true);
             for (var i = 0; i < transforms.Length; i++) {

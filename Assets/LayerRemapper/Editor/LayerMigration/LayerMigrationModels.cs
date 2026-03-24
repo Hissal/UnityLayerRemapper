@@ -7,8 +7,8 @@ using UnityEngine;
 namespace LayerRemapper.Editor.LayerMigration {
     [Serializable]
     internal sealed class LayerSnapshotEntry {
-        [SerializeField] private int index;
-        [SerializeField] private string name = string.Empty;
+        [SerializeField] int index;
+        [SerializeField] string name = string.Empty;
 
         public int Index => index;
         public string Name => name;
@@ -21,7 +21,7 @@ namespace LayerRemapper.Editor.LayerMigration {
 
     /// <summary>Stores a captured copy of the project's layer table for later migration and validation.</summary>
     public sealed class LayerSnapshotAsset : ScriptableObject {
-        [SerializeField] private List<LayerSnapshotEntry> entries = new();
+        [SerializeField] List<LayerSnapshotEntry> entries = new();
 
         internal IReadOnlyList<LayerSnapshotEntry> Entries => entries;
 
@@ -37,11 +37,11 @@ namespace LayerRemapper.Editor.LayerMigration {
 
     [Serializable]
     internal sealed class LayerRemapEntry {
-        [SerializeField] private bool enabled = true;
-        [SerializeField] private int oldLayerIndex;
-        [SerializeField] private string oldLayerName = string.Empty;
-        [SerializeField] private int newLayerIndex;
-        [SerializeField] private string newLayerName = string.Empty;
+        [SerializeField] bool enabled = true;
+        [SerializeField] int oldLayerIndex;
+        [SerializeField] string oldLayerName = string.Empty;
+        [SerializeField] int newLayerIndex;
+        [SerializeField] string newLayerName = string.Empty;
 
         public bool Enabled {
             get => enabled;
@@ -70,8 +70,8 @@ namespace LayerRemapper.Editor.LayerMigration {
     }
 
     internal sealed class LayerRemapReport {
-        private readonly List<string> _changedAssets = new();
-        private readonly List<string> _warnings = new();
+        readonly List<string> _changedAssets = new();
+        readonly List<string> _warnings = new();
 
         public bool DryRun { get; set; }
         public bool IsValidationOnly { get; set; }
@@ -131,7 +131,7 @@ namespace LayerRemapper.Editor.LayerMigration {
     }
 
     internal static class LayerTableUtility {
-        private const string TagManagerPath = "ProjectSettings/TagManager.asset";
+        const string TagManagerPath = "ProjectSettings/TagManager.asset";
 
         /// <summary>Captures current layer indices and names from <c>ProjectSettings/TagManager.asset</c>.</summary>
         public static List<LayerSnapshotEntry> CaptureCurrentLayerTable() {

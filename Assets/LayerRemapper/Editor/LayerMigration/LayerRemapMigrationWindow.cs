@@ -5,32 +5,32 @@ using UnityEngine;
 namespace LayerRemapper.Editor.LayerMigration {
     /// <summary>Editor tool that previews, applies, and validates project-wide layer remapping in serialized data.</summary>
     public sealed class LayerRemapMigrationWindow : EditorWindow {
-        private const string SnapshotFolderRoot = "Assets/LayerRemapper/Editor";
-        private const string SnapshotFolderName = "LayerMigration";
-        private const string SnapshotDirectory = SnapshotFolderRoot + "/" + SnapshotFolderName;
-        private const string SnapshotAssetPath = SnapshotDirectory + "/LayerMigrationSnapshot.asset";
+        const string SnapshotFolderRoot = "Assets/LayerRemapper/Editor";
+        const string SnapshotFolderName = "LayerMigration";
+        const string SnapshotDirectory = SnapshotFolderRoot + "/" + SnapshotFolderName;
+        const string SnapshotAssetPath = SnapshotDirectory + "/LayerMigrationSnapshot.asset";
 
-        private readonly List<LayerRemapEntry> _entries = new();
+        readonly List<LayerRemapEntry> _entries = new();
 
-        private LayerSnapshotAsset _snapshot;
-        private List<LayerSnapshotEntry> _currentLayers = new();
-        private Vector2 _scroll;
-        private string _reportText = string.Empty;
+        LayerSnapshotAsset _snapshot;
+        List<LayerSnapshotEntry> _currentLayers = new();
+        Vector2 _scroll;
+        string _reportText = string.Empty;
 
         [MenuItem("Tools/Project/Layer Remap Migration")]
-        private static void OpenWindow() {
+        static void OpenWindow() {
             var window = GetWindow<LayerRemapMigrationWindow>();
             window.titleContent = new GUIContent("Layer Remap Migration");
             window.minSize = new Vector2(780f, 560f);
             window.Show();
         }
 
-        private void OnEnable() {
+        void OnEnable() {
             _currentLayers = LayerTableUtility.CaptureCurrentLayerTable();
             _snapshot = AssetDatabase.LoadAssetAtPath<LayerSnapshotAsset>(SnapshotAssetPath);
         }
 
-        private void OnGUI() {
+        void OnGUI() {
             EditorGUILayout.HelpBox("Run this tool on a clean branch and commit your work before applying migration.", MessageType.Warning);
             EditorGUILayout.Space();
 
@@ -47,7 +47,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             EditorGUILayout.EndScrollView();
         }
 
-        private void DrawSnapshotSection() {
+        void DrawSnapshotSection() {
             EditorGUILayout.LabelField("1. Old Layer Snapshot", EditorStyles.boldLabel);
             _snapshot = (LayerSnapshotAsset)EditorGUILayout.ObjectField("Snapshot", _snapshot, typeof(LayerSnapshotAsset), false);
 
@@ -72,7 +72,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        private void DrawCurrentLayerSection() {
+        void DrawCurrentLayerSection() {
             EditorGUILayout.LabelField("2. New Layer State (Current Project)", EditorStyles.boldLabel);
             if (GUILayout.Button("Refresh Current Layer Table"))
                 _currentLayers = LayerTableUtility.CaptureCurrentLayerTable();
@@ -83,7 +83,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        private void DrawRemapEntriesSection() {
+        void DrawRemapEntriesSection() {
             EditorGUILayout.LabelField("3. Remap Entries", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("Remapping uses layer indices as source of truth. Names are display-only.", MessageType.None);
             if (GUILayout.Button("Add Remap Entry")) {
@@ -116,7 +116,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        private void DrawActionsSection() {
+        void DrawActionsSection() {
             EditorGUILayout.LabelField("4. Preview / Apply / Validation", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Preview Dry Run")) {
@@ -144,7 +144,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             EditorGUILayout.EndHorizontal();
         }
 
-        private void DrawReportSection() {
+        void DrawReportSection() {
             EditorGUILayout.LabelField("5. Report", EditorStyles.boldLabel);
             if (string.IsNullOrEmpty(_reportText))
                 EditorGUILayout.HelpBox("Run preview, apply, or validation to generate a report.", MessageType.Info);
@@ -152,13 +152,13 @@ namespace LayerRemapper.Editor.LayerMigration {
                 EditorGUILayout.TextArea(_reportText, GUILayout.MinHeight(180f));
         }
 
-        private void SetReport(LayerRemapReport report) {
+        void SetReport(LayerRemapReport report) {
             _reportText = report.ToDisplayString();
             Debug.Log(_reportText);
             Repaint();
         }
 
-        private void TakeSnapshot() {
+        void TakeSnapshot() {
             _currentLayers = LayerTableUtility.CaptureCurrentLayerTable();
             EnsureSnapshotFolder();
 
@@ -176,7 +176,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             AssetDatabase.Refresh();
         }
 
-        private static void EnsureSnapshotFolder() {
+        static void EnsureSnapshotFolder() {
             if (!AssetDatabase.IsValidFolder("Assets/LayerRemapper"))
                 AssetDatabase.CreateFolder("Assets", "LayerRemapper");
 
@@ -187,13 +187,13 @@ namespace LayerRemapper.Editor.LayerMigration {
                 AssetDatabase.CreateFolder(SnapshotFolderRoot, SnapshotFolderName);
         }
 
-        private void LoadExistingSnapshot() {
+        void LoadExistingSnapshot() {
             _snapshot = AssetDatabase.LoadAssetAtPath<LayerSnapshotAsset>(SnapshotAssetPath);
             if (!_snapshot)
                 EditorUtility.DisplayDialog("Layer Snapshot", "No snapshot asset was found at the default path.", "OK");
         }
 
-        private IReadOnlyList<LayerSnapshotEntry> GetSnapshotEntries() {
+        IReadOnlyList<LayerSnapshotEntry> GetSnapshotEntries() {
             if (_snapshot == null)
                 return System.Array.Empty<LayerSnapshotEntry>();
 
