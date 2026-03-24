@@ -10,32 +10,51 @@ namespace LayerRemapper.Editor.LayerMigration {
     internal static class LayerRemapMigrationRunner {
         /// <summary>Runs a read-only migration pass and reports what would change.</summary>
         public static LayerRemapReport Preview(IReadOnlyList<LayerRemapEntry> entries) {
-            return Execute(entries, false, false);
+            return Preview(entries, null);
+        }
+
+        /// <summary>Runs a read-only migration pass and reports what would change under the configured scan roots.</summary>
+        public static LayerRemapReport Preview(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths) {
+            return Execute(entries, false, false, rootPaths);
         }
 
         /// <summary>Runs migration and writes modified serialized assets, prefabs, and scenes.</summary>
         public static LayerRemapReport Apply(IReadOnlyList<LayerRemapEntry> entries) {
-            return Execute(entries, true, false);
+            return Apply(entries, null);
+        }
+
+        /// <summary>Runs migration and writes modified serialized assets, prefabs, and scenes under the configured scan roots.</summary>
+        public static LayerRemapReport Apply(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths) {
+            return Execute(entries, true, false, rootPaths);
         }
 
         /// <summary>Runs validation-only scanning for remaining old layer usages.</summary>
         public static LayerRemapReport Validate(IReadOnlyList<LayerRemapEntry> entries) {
-            return Execute(entries, false, true);
+            return Validate(entries, null);
         }
 
-        static LayerRemapReport Execute(IReadOnlyList<LayerRemapEntry> entries, bool applyChanges, bool validationOnly) {
+        /// <summary>Runs validation-only scanning for remaining old layer usages under the configured scan roots.</summary>
+        public static LayerRemapReport Validate(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths) {
+            return Execute(entries, false, true, rootPaths);
+        }
+
+        static LayerRemapReport Execute(IReadOnlyList<LayerRemapEntry> entries, bool applyChanges, bool validationOnly, IReadOnlyList<string> rootPaths) {
             var report = new LayerRemapReport {
                 DryRun = !applyChanges,
                 IsValidationOnly = validationOnly
             };
+            var scanRootFilter = LayerMigrationScanRootFilter.Create(rootPaths);
+            report.SetScanRoots(scanRootFilter.Roots, scanRootFilter.IsFullProjectScan);
+            for (var i = 0; i < scanRootFilter.Warnings.Count; i++)
+                report.AddWarning(scanRootFilter.Warnings[i]);
 
             var migrationPlan = BuildMigrationPlan(entries, report);
             if (migrationPlan.SourceLayers.Count == 0)
                 report.AddWarning("No enabled migration entries found.");
 
-            ProcessPrefabs(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, applyChanges, validationOnly, report);
-            ProcessScenes(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, applyChanges, validationOnly, report);
-            ProcessOtherAssets(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, applyChanges, validationOnly, report);
+            ProcessPrefabs(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, report);
+            ProcessScenes(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, report);
+            ProcessOtherAssets(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, report);
 
             if (applyChanges)
                 AssetDatabase.SaveAssets();
@@ -80,11 +99,11 @@ namespace LayerRemapper.Editor.LayerMigration {
             return new LayerMigrationPlan(remapTable, removeLayers, new List<int>(operationBySourceLayer.Keys));
         }
 
-        static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
-            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+        static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", scanRootFilter.SearchFoldersArray);
             foreach (var guid in prefabGuids) {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (string.IsNullOrWhiteSpace(path))
+                if (string.IsNullOrWhiteSpace(path) || !scanRootFilter.Includes(path))
                     continue;
 
                 report.AssetsScanned++;
@@ -97,8 +116,10 @@ namespace LayerRemapper.Editor.LayerMigration {
                     if (applyChanges && changed)
                         PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
 
-                    if (changed)
+                    if (changed) {
+                        report.PrefabsChanged++;
                         report.AddChangedAsset(path);
+                    }
                 }
                 catch (Exception exception) {
                     report.AddWarning($"Prefab processing failed: {path}. {exception.Message}");
@@ -110,13 +131,13 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var previousSetup = EditorSceneManager.GetSceneManagerSetup();
             try {
-                var sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets" });
+                var sceneGuids = AssetDatabase.FindAssets("t:Scene", scanRootFilter.SearchFoldersArray);
                 foreach (var guid in sceneGuids) {
                     var path = AssetDatabase.GUIDToAssetPath(guid);
-                    if (string.IsNullOrWhiteSpace(path))
+                    if (string.IsNullOrWhiteSpace(path) || !scanRootFilter.Includes(path))
                         continue;
 
                     report.AssetsScanned++;
@@ -134,8 +155,10 @@ namespace LayerRemapper.Editor.LayerMigration {
                         if (applyChanges && changed)
                             EditorSceneManager.SaveScene(scene);
 
-                        if (changed)
+                        if (changed) {
+                            report.ScenesChanged++;
                             report.AddChangedAsset(path);
+                        }
 
                         EditorSceneManager.CloseScene(scene, true);
                     }
@@ -149,11 +172,11 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        static void ProcessOtherAssets(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessOtherAssets(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var allPaths = AssetDatabase.GetAllAssetPaths();
             var scannedPaths = new HashSet<string>();
             foreach (var path in allPaths) {
-                if (!path.StartsWith("Assets/", StringComparison.Ordinal))
+                if (!scanRootFilter.Includes(path))
                     continue;
 
                 if (Path.GetExtension(path) is ".unity" or ".prefab" or ".meta" or ".cs" or ".asmdef")
@@ -167,6 +190,7 @@ namespace LayerRemapper.Editor.LayerMigration {
                     continue;
 
                 report.AssetsScanned++;
+                report.SerializedAssetsScanned++;
 
                 var changedInPath = false;
                 for (var i = 0; i < assets.Length; i++) {
@@ -198,8 +222,10 @@ namespace LayerRemapper.Editor.LayerMigration {
                     }
                 }
 
-                if (changedInPath)
+                if (changedInPath) {
+                    report.SerializedAssetsChanged++;
                     report.AddChangedAsset(path);
+                }
             }
         }
 

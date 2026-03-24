@@ -128,6 +128,10 @@ The migration runner targets project assets under `Assets/` and includes:
 - Scenes (`t:Scene`)
 - Other serialized assets where `SerializedObject` can be traversed
 
+By default, scanning runs across all `Assets/`.
+You can optionally configure one or more **Scan Roots** in the migration window to restrict preview/apply/validation to explicit inclusion paths (for example `Assets/_Project/` and `Assets/Resources/`).
+Only assets whose paths start with one of the configured roots are scanned.
+
 It skips non-target paths/extensions such as `.meta`, `.cs`, `.asmdef`, and already-covered scene/prefab paths.
 
 ## Safety and recommended workflow

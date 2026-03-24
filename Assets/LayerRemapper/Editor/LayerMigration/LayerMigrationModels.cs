@@ -82,13 +82,19 @@ namespace LayerRemapper.Editor.LayerMigration {
 
     internal sealed class LayerRemapReport {
         readonly List<string> _changedAssets = new();
+        readonly List<string> _scanRoots = new();
         readonly List<string> _warnings = new();
 
         public bool DryRun { get; set; }
         public bool IsValidationOnly { get; set; }
+        public bool IsFullProjectScan { get; set; }
         public int AssetsScanned { get; set; }
         public int PrefabsScanned { get; set; }
         public int ScenesScanned { get; set; }
+        public int SerializedAssetsScanned { get; set; }
+        public int PrefabsChanged { get; set; }
+        public int ScenesChanged { get; set; }
+        public int SerializedAssetsChanged { get; set; }
         public int GameObjectLayersChanged { get; set; }
         public int LayerMaskPropertiesChanged { get; set; }
         public int ObjectsChanged { get; set; }
@@ -97,7 +103,23 @@ namespace LayerRemapper.Editor.LayerMigration {
         public int RemainingLayerMaskOldLayerUsages { get; set; }
 
         public IReadOnlyList<string> ChangedAssets => _changedAssets;
+        public IReadOnlyList<string> ScanRoots => _scanRoots;
         public IReadOnlyList<string> Warnings => _warnings;
+
+        public void SetScanRoots(IReadOnlyList<string> roots, bool isFullProjectScan) {
+            IsFullProjectScan = isFullProjectScan;
+            _scanRoots.Clear();
+            if (roots == null)
+                return;
+
+            for (var i = 0; i < roots.Count; i++) {
+                var root = roots[i];
+                if (string.IsNullOrWhiteSpace(root))
+                    continue;
+
+                _scanRoots.Add(root);
+            }
+        }
 
         public void AddChangedAsset(string path) {
             if (!_changedAssets.Contains(path))
@@ -115,9 +137,19 @@ namespace LayerRemapper.Editor.LayerMigration {
             var builder = new StringBuilder();
             var modeText = IsValidationOnly ? "Validation" : DryRun ? "Dry Run" : "Apply";
             builder.AppendLine($"Layer Remap Migration Report ({modeText})");
+            builder.AppendLine(IsFullProjectScan ? "Scan scope: Full project (Assets/)" : "Scan scope: Filtered roots");
+            if (_scanRoots.Count > 0) {
+                builder.AppendLine("Scan roots:");
+                foreach (var root in _scanRoots)
+                    builder.AppendLine($"- {root}");
+            }
             builder.AppendLine($"Assets scanned: {AssetsScanned}");
             builder.AppendLine($"Prefabs scanned: {PrefabsScanned}");
             builder.AppendLine($"Scenes scanned: {ScenesScanned}");
+            builder.AppendLine($"Serialized assets scanned: {SerializedAssetsScanned}");
+            builder.AppendLine($"Prefabs changed: {PrefabsChanged}");
+            builder.AppendLine($"Scenes changed: {ScenesChanged}");
+            builder.AppendLine($"Serialized assets changed: {SerializedAssetsChanged}");
             builder.AppendLine($"Objects changed: {ObjectsChanged}");
             builder.AppendLine($"GameObject.layer changes: {GameObjectLayersChanged}");
             builder.AppendLine($"LayerMask property changes: {LayerMaskPropertiesChanged}");
