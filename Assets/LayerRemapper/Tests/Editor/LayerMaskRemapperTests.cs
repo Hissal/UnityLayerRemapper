@@ -1,0 +1,64 @@
+using System.Collections.Generic;
+using NUnit.Framework;
+
+namespace LayerRemapper.Tests {
+    public sealed class LayerMaskRemapperTests {
+        [Test]
+        public void RemapMask_SingleBit_RemapsToExpectedLayer() {
+            var mapping = new Dictionary<int, int> {
+                [8] = 12
+            };
+
+            var source = 1 << 8;
+            var result = LayerMaskRemapper.RemapMask(source, mapping);
+
+            Assert.That(result, Is.EqualTo(1 << 12));
+        }
+
+        [Test]
+        public void RemapMask_MultipleBits_RemapsAllMappedBits() {
+            var mapping = new Dictionary<int, int> {
+                [8] = 12,
+                [10] = 15
+            };
+
+            var source = (1 << 8) | (1 << 10);
+            var result = LayerMaskRemapper.RemapMask(source, mapping);
+
+            Assert.That(result, Is.EqualTo((1 << 12) | (1 << 15)));
+        }
+
+        [Test]
+        public void RemapMask_PreservesUnmappedBits() {
+            var mapping = new Dictionary<int, int> {
+                [8] = 12
+            };
+
+            var source = (1 << 8) | (1 << 17);
+            var result = LayerMaskRemapper.RemapMask(source, mapping);
+
+            Assert.That(result, Is.EqualTo((1 << 12) | (1 << 17)));
+        }
+
+        [Test]
+        public void RemapMask_ManyOldToOneNew_SetsDestinationBitOnce() {
+            var mapping = new Dictionary<int, int> {
+                [8] = 12,
+                [10] = 12
+            };
+
+            var source = (1 << 8) | (1 << 10);
+            var result = LayerMaskRemapper.RemapMask(source, mapping);
+
+            Assert.That(result, Is.EqualTo(1 << 12));
+        }
+
+        [Test]
+        public void ContainsAnyOldLayerBit_DetectsLeftoverBits() {
+            var source = (1 << 3) | (1 << 18);
+            var hasLeftover = LayerMaskRemapper.ContainsAnyOldLayerBit(source, new[] { 2, 3, 4 });
+
+            Assert.That(hasLeftover, Is.True);
+        }
+    }
+}
