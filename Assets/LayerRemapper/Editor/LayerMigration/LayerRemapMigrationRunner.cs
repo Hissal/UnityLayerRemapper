@@ -283,6 +283,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             return changedAny;
         }
 
+        /// <summary>Converts configured scan-root search folders to a string array for <see cref="AssetDatabase.FindAssets(string,string[])"/>.</summary>
         static string[] GetSearchFolders(LayerMigrationScanRootFilter scanRootFilter) {
             var searchFolders = scanRootFilter.SearchFolders;
             var result = new string[searchFolders.Count];

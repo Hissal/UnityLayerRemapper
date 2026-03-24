@@ -89,6 +89,11 @@ namespace LayerRemapper.Editor.LayerMigration {
             return false;
         }
 
+        /// <summary>Normalizes a configured scan root and validates that it uses an <c>Assets/</c> prefix.</summary>
+        /// <param name="rootPath">Raw configured root path entered by the user.</param>
+        /// <param name="normalizedRoot">Normalized root with forward slashes and a trailing slash when valid.</param>
+        /// <param name="warning">Validation warning explaining why normalization failed.</param>
+        /// <returns>True when <paramref name="rootPath"/> is valid and normalized; otherwise false.</returns>
         static bool TryNormalizeRoot(string rootPath, out string normalizedRoot, out string warning) {
             normalizedRoot = string.Empty;
             warning = string.Empty;
@@ -111,6 +116,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             return true;
         }
 
+        /// <summary>Converts path separators to forward slashes for consistent Unity asset-path matching.</summary>
         static string NormalizeSlashes(string value) {
             return value.Replace('\\', '/');
         }
