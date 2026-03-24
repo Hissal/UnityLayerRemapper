@@ -6,17 +6,21 @@ namespace LayerRemapper.Editor.LayerMigration {
     /// <summary>Normalizes configured scan roots and answers whether asset paths are included by those roots.</summary>
     public sealed class LayerMigrationScanRootFilter {
         readonly List<string> _roots;
+        readonly List<string> _searchFolders;
         readonly List<string> _warnings;
 
         /// <summary>Normalized root paths used for inclusion matching.</summary>
         public IReadOnlyList<string> Roots => _roots;
+        /// <summary>Folder paths suitable for <see cref="AssetDatabase.FindAssets(string,string[])"/> search roots.</summary>
+        public IReadOnlyList<string> SearchFolders => _searchFolders;
         /// <summary>Validation warnings generated while normalizing configured roots.</summary>
         public IReadOnlyList<string> Warnings => _warnings;
         /// <summary>True when no explicit roots were configured and the filter defaults to scanning all <c>Assets/</c>.</summary>
         public bool IsFullProjectScan { get; }
 
-        LayerMigrationScanRootFilter(List<string> roots, List<string> warnings, bool isFullProjectScan) {
+        LayerMigrationScanRootFilter(List<string> roots, List<string> searchFolders, List<string> warnings, bool isFullProjectScan) {
             _roots = roots;
+            _searchFolders = searchFolders;
             _warnings = warnings;
             IsFullProjectScan = isFullProjectScan;
         }
@@ -55,7 +59,14 @@ namespace LayerRemapper.Editor.LayerMigration {
             if (!hadExplicitRootInput)
                 normalizedRoots.Add("Assets/");
 
-            return new LayerMigrationScanRootFilter(normalizedRoots, warnings, !hadExplicitRootInput);
+            var searchFolders = new List<string>(normalizedRoots.Count);
+            for (var i = 0; i < normalizedRoots.Count; i++) {
+                var searchFolder = normalizedRoots[i].TrimEnd('/');
+                if (!searchFolders.Contains(searchFolder))
+                    searchFolders.Add(searchFolder);
+            }
+
+            return new LayerMigrationScanRootFilter(normalizedRoots, searchFolders, warnings, !hadExplicitRootInput);
         }
 
         /// <summary>Returns true when <paramref name="assetPath"/> is under an included root.</summary>

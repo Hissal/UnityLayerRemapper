@@ -100,7 +100,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         }
 
         static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
-            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", GetSearchFolders(scanRootFilter));
             foreach (var guid in prefabGuids) {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (string.IsNullOrWhiteSpace(path) || !scanRootFilter.Includes(path))
@@ -134,7 +134,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var previousSetup = EditorSceneManager.GetSceneManagerSetup();
             try {
-                var sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets" });
+                var sceneGuids = AssetDatabase.FindAssets("t:Scene", GetSearchFolders(scanRootFilter));
                 foreach (var guid in sceneGuids) {
                     var path = AssetDatabase.GUIDToAssetPath(guid);
                     if (string.IsNullOrWhiteSpace(path) || !scanRootFilter.Includes(path))
@@ -281,6 +281,15 @@ namespace LayerRemapper.Editor.LayerMigration {
                 report.ObjectsChanged++;
 
             return changedAny;
+        }
+
+        static string[] GetSearchFolders(LayerMigrationScanRootFilter scanRootFilter) {
+            var searchFolders = scanRootFilter.SearchFolders;
+            var result = new string[searchFolders.Count];
+            for (var i = 0; i < searchFolders.Count; i++)
+                result[i] = searchFolders[i];
+
+            return result;
         }
 
         /// <summary>Migration collections computed once from enabled entries before any asset traversal begins.</summary>

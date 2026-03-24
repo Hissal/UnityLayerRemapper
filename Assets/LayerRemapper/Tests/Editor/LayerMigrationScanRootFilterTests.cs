@@ -29,6 +29,8 @@ namespace LayerRemapper.Tests {
 
             Assert.That(filter.Roots.Count, Is.EqualTo(1));
             Assert.That(filter.Roots[0], Is.EqualTo("Assets/LayerRemapper/"));
+            Assert.That(filter.SearchFolders.Count, Is.EqualTo(1));
+            Assert.That(filter.SearchFolders[0], Is.EqualTo("Assets/LayerRemapper"));
         }
 
         [Test]

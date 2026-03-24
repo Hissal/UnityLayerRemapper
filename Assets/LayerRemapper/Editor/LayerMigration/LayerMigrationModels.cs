@@ -117,8 +117,7 @@ namespace LayerRemapper.Editor.LayerMigration {
                 if (string.IsNullOrWhiteSpace(root))
                     continue;
 
-                if (!_scanRoots.Contains(root))
-                    _scanRoots.Add(root);
+                _scanRoots.Add(root);
             }
         }
 
