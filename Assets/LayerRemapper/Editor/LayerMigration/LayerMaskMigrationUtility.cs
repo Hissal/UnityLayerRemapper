@@ -49,8 +49,8 @@ namespace LayerRemapper.Editor.LayerMigration {
             return count;
         }
 
-        private static bool IsLayerMaskProperty(SerializedProperty property) {
-            return property.propertyType == SerializedPropertyType.Integer && property.type == "LayerMask";
+        static bool IsLayerMaskProperty(SerializedProperty property) {
+            return property.propertyType == SerializedPropertyType.LayerMask;
         }
     }
 }
