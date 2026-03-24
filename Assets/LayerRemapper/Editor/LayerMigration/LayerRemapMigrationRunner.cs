@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -285,12 +286,7 @@ namespace LayerRemapper.Editor.LayerMigration {
 
         /// <summary>Converts configured scan-root search folders to a string array for <see cref="AssetDatabase.FindAssets(string,string[])"/>.</summary>
         static string[] GetSearchFolders(LayerMigrationScanRootFilter scanRootFilter) {
-            var searchFolders = scanRootFilter.SearchFolders;
-            var result = new string[searchFolders.Count];
-            for (var i = 0; i < searchFolders.Count; i++)
-                result[i] = searchFolders[i];
-
-            return result;
+            return scanRootFilter.SearchFolders.ToArray();
         }
 
         /// <summary>Migration collections computed once from enabled entries before any asset traversal begins.</summary>

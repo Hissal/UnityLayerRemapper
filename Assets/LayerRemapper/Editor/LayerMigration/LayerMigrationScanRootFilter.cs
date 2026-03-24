@@ -31,6 +31,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         /// </returns>
         public static LayerMigrationScanRootFilter Create(IEnumerable<string> configuredRoots) {
             var normalizedRoots = new List<string>();
+            var normalizedRootSet = new HashSet<string>();
             var warnings = new List<string>();
             var hadExplicitRootInput = false;
 
@@ -51,7 +52,7 @@ namespace LayerRemapper.Editor.LayerMigration {
                         continue;
                     }
 
-                    if (!normalizedRoots.Contains(normalizedRoot))
+                    if (normalizedRootSet.Add(normalizedRoot))
                         normalizedRoots.Add(normalizedRoot);
                 }
             }
@@ -62,8 +63,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             var searchFolders = new List<string>(normalizedRoots.Count);
             for (var i = 0; i < normalizedRoots.Count; i++) {
                 var searchFolder = normalizedRoots[i].TrimEnd('/');
-                if (!searchFolders.Contains(searchFolder))
-                    searchFolders.Add(searchFolder);
+                searchFolders.Add(searchFolder);
             }
 
             return new LayerMigrationScanRootFilter(normalizedRoots, searchFolders, warnings, !hadExplicitRootInput);

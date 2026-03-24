@@ -156,21 +156,13 @@ namespace LayerRemapper.Editor.LayerMigration {
 
         void DrawScanRootsSection() {
             EditorGUILayout.LabelField("4. Scan Roots", EditorStyles.boldLabel);
-            var hasConfiguredRoots = false;
-            for (var i = 0; i < _rootPaths.Count; i++) {
-                if (!string.IsNullOrWhiteSpace(_rootPaths[i])) {
-                    hasConfiguredRoots = true;
-                    break;
-                }
-            }
-
+            var scanRootFilter = LayerMigrationScanRootFilter.Create(_rootPaths);
             EditorGUILayout.HelpBox(
-                !hasConfiguredRoots
+                scanRootFilter.IsFullProjectScan
                     ? "No root paths configured. Full-project scan under Assets/ will be used."
                     : "Scanning is restricted to assets under the configured root paths.",
                 MessageType.None
             );
-            var scanRootFilter = LayerMigrationScanRootFilter.Create(_rootPaths);
             for (var i = 0; i < scanRootFilter.Warnings.Count; i++)
                 EditorGUILayout.HelpBox(scanRootFilter.Warnings[i], MessageType.Warning);
 
