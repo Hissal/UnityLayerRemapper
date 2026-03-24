@@ -85,8 +85,8 @@ namespace LayerRemapper.Editor.LayerMigration {
 
         void DrawRemapEntriesSection() {
             EditorGUILayout.LabelField("3. Remap Entries", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("Remapping uses layer indices as source of truth. Names are display-only.", MessageType.None);
-            if (GUILayout.Button("Add Remap Entry")) {
+            EditorGUILayout.HelpBox("Operations use source layer indices as source of truth. Names are display-only.", MessageType.None);
+            if (GUILayout.Button("Add Entry")) {
                 _entries.Add(new LayerRemapEntry());
             }
 
@@ -105,13 +105,21 @@ namespace LayerRemapper.Editor.LayerMigration {
 
                 EditorGUILayout.EndHorizontal();
 
+                entry.OperationType = (LayerMigrationOperationType)EditorGUILayout.EnumPopup("Operation", entry.OperationType);
                 entry.OldLayerIndex = EditorGUILayout.IntField("Old Layer Index", entry.OldLayerIndex);
                 entry.OldLayerName = LayerTableUtility.GetLayerName(entry.OldLayerIndex, snapshotEntries);
                 EditorGUILayout.LabelField("Old Layer Name", string.IsNullOrEmpty(entry.OldLayerName) ? "<unknown/empty>" : entry.OldLayerName);
 
-                entry.NewLayerIndex = EditorGUILayout.IntField("New Layer Index", entry.NewLayerIndex);
-                entry.NewLayerName = LayerTableUtility.GetLayerName(entry.NewLayerIndex, _currentLayers);
-                EditorGUILayout.LabelField("New Layer Name", string.IsNullOrEmpty(entry.NewLayerName) ? "<unknown/empty>" : entry.NewLayerName);
+                if (entry.OperationType == LayerMigrationOperationType.Remap) {
+                    entry.NewLayerIndex = EditorGUILayout.IntField("New Layer Index", entry.NewLayerIndex);
+                    entry.NewLayerName = LayerTableUtility.GetLayerName(entry.NewLayerIndex, _currentLayers);
+                    EditorGUILayout.LabelField("New Layer Name", string.IsNullOrEmpty(entry.NewLayerName) ? "<unknown/empty>" : entry.NewLayerName);
+                }
+                else {
+                    entry.NewLayerName = "Default";
+                    EditorGUILayout.LabelField("Removal Result", "GameObject.layer -> Default (0), LayerMask bit cleared");
+                }
+
                 EditorGUILayout.EndVertical();
             }
         }

@@ -62,6 +62,22 @@ namespace LayerRemapper.Tests {
         }
 
         [Test]
+        public void ContainsLayerBit_DetectsSetLayerBit() {
+            var source = (1 << 6) | (1 << 18);
+
+            Assert.That(LayerMaskRemapper.ContainsLayerBit(source, 18), Is.True);
+            Assert.That(LayerMaskRemapper.ContainsLayerBit(source, 7), Is.False);
+        }
+
+        [Test]
+        public void ClearLayerBit_ClearsOnlySpecifiedBit() {
+            var source = (1 << 4) | (1 << 12) | (1 << 17);
+            var result = LayerMaskRemapper.ClearLayerBit(source, 12);
+
+            Assert.That(result, Is.EqualTo((1 << 4) | (1 << 17)));
+        }
+
+        [Test]
         public void RemapMask_Everything_RemainsUnchanged() {
             var mapping = new Dictionary<int, int> {
                 [11] = 14,

@@ -32,7 +32,7 @@ namespace LayerRemapper.Tests {
                     [11] = 15
                 };
 
-                var changed = LayerMaskMigrationUtility.RemapLayerMasksInSerializedObject(serializedObject, mapping, true);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, mapping, new HashSet<int>(), true);
 
                 Assert.That(changed, Is.EqualTo(4));
                 Assert.That(holder.singleMask.value, Is.EqualTo(MaskWith(12).value));
@@ -91,10 +91,49 @@ namespace LayerRemapper.Tests {
                     [14] = 11
                 };
 
-                var changed = LayerMaskMigrationUtility.RemapLayerMasksInSerializedObject(serializedObject, mapping, true);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, mapping, new HashSet<int>(), true);
 
                 Assert.That(changed, Is.EqualTo(0));
                 Assert.That(holder.singleMask.value, Is.EqualTo(-1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_RemoveMode_ClearsRemovedBitAndPreservesOtherBits() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = (1 << 5) | (1 << 12) | (1 << 18)
+                };
+                holder.nested = new NestedMaskData {
+                    mask = new LayerMask {
+                        value = (1 << 12) | (1 << 25)
+                    }
+                };
+                holder.nestedList = new List<NestedMaskData> {
+                    new() {
+                        mask = new LayerMask {
+                            value = (1 << 1) | (1 << 12)
+                        }
+                    }
+                };
+                holder.graph = new GraphMaskNode {
+                    mask = new LayerMask {
+                        value = (1 << 12) | (1 << 3)
+                    }
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, new Dictionary<int, int>(), new HashSet<int> { 12 }, true);
+
+                Assert.That(changed, Is.EqualTo(4));
+                Assert.That(holder.singleMask.value, Is.EqualTo((1 << 5) | (1 << 18)));
+                Assert.That(holder.nested.mask.value, Is.EqualTo(1 << 25));
+                Assert.That(holder.nestedList[0].mask.value, Is.EqualTo(1 << 1));
+                Assert.That(((GraphMaskNode)holder.graph).mask.value, Is.EqualTo(1 << 3));
             }
             finally {
                 UnityEngine.Object.DestroyImmediate(holder);
