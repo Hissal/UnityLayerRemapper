@@ -35,7 +35,6 @@ Every system `README.md` MUST:
 1. Start with: `Last Updated: YYYY-MM-DD`
 2. Include a short system overview, purpose, and high-level usage summary.
 3. Link to all `Docs/` pages if `Docs/` exists.
-4. Include navigation links to the repository root `README.md` and root docs index.
 
 ---
 
@@ -47,15 +46,6 @@ Every documentation page MUST:
 2. Use clear headings and structured sections.
 3. Use consistent terminology throughout.
 4. Include a navigation footer linking back to the system `README.md` and relevant sibling pages.
-
-Minimum nav footer:
-
-```markdown
----
-## Navigation
-- [← Back to System Index](../README.md)
-- [Next: API →](API.md)
-```
 
 ---
 

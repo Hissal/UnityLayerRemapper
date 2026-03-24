@@ -14,7 +14,3 @@ Project editor tooling for project-wide Unity layer remapping migrations.
 6. Run **Validate Remaining Usages** to find leftovers.
 
 The migration scans serialized inspector data only (prefabs, scenes, ScriptableObjects, and other serialized assets under `Assets/`), updates `GameObject.layer` plus serialized `LayerMask` fields, and preserves unmapped bits.
-
-## Navigation
-- [← Back to Repository Root](../../README.md)
-- [↑ Back to Root Docs](../../Docs/)
