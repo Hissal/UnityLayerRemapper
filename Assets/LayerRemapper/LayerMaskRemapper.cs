@@ -28,14 +28,29 @@ namespace LayerRemapper {
             return (mask & ~oldBitsToClear) | newBitsToSet;
         }
 
+        /// <summary>Checks whether <paramref name="mask"/> contains the bit for <paramref name="layerIndex"/>.</summary>
+        /// <returns><c>true</c> when the bit is present; otherwise, <c>false</c>.</returns>
+        public static bool ContainsLayerBit(int mask, int layerIndex) {
+            if (layerIndex is < 0 or > 31)
+                return false;
+
+            return (mask & (1 << layerIndex)) != 0;
+        }
+
+        /// <summary>Clears the bit for <paramref name="layerIndex"/> from <paramref name="mask"/>.</summary>
+        /// <returns>The mask with the target bit removed and all other bits preserved.</returns>
+        public static int ClearLayerBit(int mask, int layerIndex) {
+            if (layerIndex is < 0 or > 31)
+                return mask;
+
+            return mask & ~(1 << layerIndex);
+        }
+
         /// <summary>Checks whether <paramref name="mask"/> still contains any bit from <paramref name="oldLayers"/>.</summary>
         /// <returns><c>true</c> when at least one old layer bit is still present; otherwise, <c>false</c>.</returns>
         public static bool ContainsAnyOldLayerBit(int mask, IEnumerable<int> oldLayers) {
             foreach (var layer in oldLayers) {
-                if (layer is < 0 or > 31)
-                    continue;
-
-                if ((mask & (1 << layer)) != 0)
+                if (ContainsLayerBit(mask, layer))
                     return true;
             }
 

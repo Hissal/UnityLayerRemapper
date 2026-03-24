@@ -5,6 +5,11 @@ using UnityEditor;
 using UnityEngine;
 
 namespace LayerRemapper.Editor.LayerMigration {
+    internal enum LayerMigrationOperationType {
+        Remap = 0,
+        Remove = 1
+    }
+
     [Serializable]
     internal sealed class LayerSnapshotEntry {
         [SerializeField] int index;
@@ -38,6 +43,7 @@ namespace LayerRemapper.Editor.LayerMigration {
     [Serializable]
     internal sealed class LayerRemapEntry {
         [SerializeField] bool enabled = true;
+        [SerializeField] LayerMigrationOperationType operationType = LayerMigrationOperationType.Remap;
         [SerializeField] int oldLayerIndex;
         [SerializeField] string oldLayerName = string.Empty;
         [SerializeField] int newLayerIndex;
@@ -51,6 +57,11 @@ namespace LayerRemapper.Editor.LayerMigration {
         public int OldLayerIndex {
             get => oldLayerIndex;
             set => oldLayerIndex = Mathf.Clamp(value, 0, 31);
+        }
+
+        public LayerMigrationOperationType OperationType {
+            get => operationType;
+            set => operationType = value;
         }
 
         public string OldLayerName {
@@ -111,8 +122,8 @@ namespace LayerRemapper.Editor.LayerMigration {
             builder.AppendLine($"GameObject.layer changes: {GameObjectLayersChanged}");
             builder.AppendLine($"LayerMask property changes: {LayerMaskPropertiesChanged}");
             builder.AppendLine($"Missing scripts encountered: {MissingScriptsEncountered}");
-            builder.AppendLine($"Remaining old GameObject.layer usages: {RemainingGameObjectOldLayerUsages}");
-            builder.AppendLine($"Remaining old LayerMask usages: {RemainingLayerMaskOldLayerUsages}");
+            builder.AppendLine($"Remaining source GameObject.layer usages: {RemainingGameObjectOldLayerUsages}");
+            builder.AppendLine($"Remaining source LayerMask usages: {RemainingLayerMaskOldLayerUsages}");
 
             if (_changedAssets.Count > 0) {
                 builder.AppendLine("Changed assets/scenes/prefabs:");

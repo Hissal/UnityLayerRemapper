@@ -2,12 +2,14 @@
 
 UnityLayerRemapper is an editor-focused Unity package for safely migrating layer usage across an existing project.
 
-It helps you remap old layer indices to new ones in bulk, preview all changes before writing anything, apply migration to assets/scenes/prefabs, and validate remaining usages after migration.
+It helps you remap old layer indices to new ones in bulk, remove deprecated layer usage, preview all changes before writing anything, apply migration to assets/scenes/prefabs, and validate remaining usages after migration.
 
 ## What this package does
 
 - Captures a snapshot of your **old layer table**.
-- Lets you define one or more **old index -> new index** remap entries.
+- Lets you define one or more migration entries:
+  - **Remap**: old index -> new index
+  - **Remove**: old index only (GameObjects are reassigned to `Default` and `LayerMask` bits are cleared)
 - Scans serialized project data under `Assets/`.
 - Updates:
   - `GameObject.layer`
@@ -20,12 +22,13 @@ It helps you remap old layer indices to new ones in bulk, preview all changes be
 
 ## Key remap behavior
 
-Remapping is index-based (names are display-only), and follows these rules:
+Migration is index-based (names are display-only), and follows these rules:
 
 - `LayerMask` **Everything** (`-1`) is preserved as-is.
 - Unmapped bits are preserved.
 - Multi-source to single-destination is supported (destination bit is set once).
 - Swap remaps are safe (example: `11 <-> 14`): if both source bits are set, both remain set after remap.
+- Remove operations clear only the source bit in `LayerMask` values and set `GameObject.layer` to `Default` (`0`).
 
 ## Requirements
 
@@ -84,12 +87,16 @@ Use:
 
 - Update layers in Unity (TagManager/layer settings) to the new target layout.
 
-### 4) Add remap entries
+### 4) Add migration entries
 
 For each migration rule:
 
+- Select **Operation**:
+  - **Remap** for old -> new index migration
+  - **Remove** to delete usage of a layer from serialized content
 - Set **Old Layer Index** (from snapshot)
-- Set **New Layer Index** (current project)
+- For **Remap**, set **New Layer Index** (current project)
+- For **Remove**, no target layer is required
 - Keep **Enabled** checked for active entries
 
 ### 5) Preview first (recommended)
