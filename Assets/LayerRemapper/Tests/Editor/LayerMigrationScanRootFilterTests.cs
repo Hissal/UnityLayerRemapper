@@ -49,6 +49,8 @@ namespace LayerRemapper.Tests {
             Assert.That(filter.IsFullProjectScan, Is.False);
             Assert.That(filter.Roots, Is.Empty);
             Assert.That(filter.Warnings.Count, Is.EqualTo(2));
+            Assert.That(filter.Warnings[0], Does.Contain("must start with 'Assets/'"));
+            Assert.That(filter.Warnings[1], Does.Contain("does not exist"));
         }
     }
 }
