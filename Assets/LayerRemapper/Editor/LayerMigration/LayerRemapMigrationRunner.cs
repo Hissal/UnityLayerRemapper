@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -101,7 +100,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         }
 
         static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
-            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", GetSearchFolders(scanRootFilter));
+            var prefabGuids = AssetDatabase.FindAssets("t:Prefab", scanRootFilter.SearchFoldersArray);
             foreach (var guid in prefabGuids) {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 if (string.IsNullOrWhiteSpace(path) || !scanRootFilter.Includes(path))
@@ -135,7 +134,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
             var previousSetup = EditorSceneManager.GetSceneManagerSetup();
             try {
-                var sceneGuids = AssetDatabase.FindAssets("t:Scene", GetSearchFolders(scanRootFilter));
+                var sceneGuids = AssetDatabase.FindAssets("t:Scene", scanRootFilter.SearchFoldersArray);
                 foreach (var guid in sceneGuids) {
                     var path = AssetDatabase.GUIDToAssetPath(guid);
                     if (string.IsNullOrWhiteSpace(path) || !scanRootFilter.Includes(path))
@@ -282,11 +281,6 @@ namespace LayerRemapper.Editor.LayerMigration {
                 report.ObjectsChanged++;
 
             return changedAny;
-        }
-
-        /// <summary>Converts configured scan-root search folders to a string array for <see cref="AssetDatabase.FindAssets(string,string[])"/>.</summary>
-        static string[] GetSearchFolders(LayerMigrationScanRootFilter scanRootFilter) {
-            return scanRootFilter.SearchFolders.ToArray();
         }
 
         /// <summary>Migration collections computed once from enabled entries before any asset traversal begins.</summary>

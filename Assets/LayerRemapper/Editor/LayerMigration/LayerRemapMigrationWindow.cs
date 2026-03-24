@@ -184,6 +184,7 @@ namespace LayerRemapper.Editor.LayerMigration {
 
             if (GUILayout.Button("Use Default (Assets/)")) {
                 _rootPaths.Clear();
+                _rootPaths.Add("Assets/");
             }
 
             if (GUILayout.Button("Clear Root Paths"))
