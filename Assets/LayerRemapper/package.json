@@ -5,7 +5,7 @@
   "description": "Editor tooling for project-wide Unity layer remapping migrations, including LayerMask and GameObject.layer updates across serialized assets.",
   "unity": "6000.4",
   "author": {
-    "name": "Lassi Harjaluoma"
+    "name": "Hissal"
   },
   "license": "MIT",
   "keywords": [
