@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using UnityEditor;
 
 namespace LayerRemapper.Editor.LayerMigration {
+    /// <summary>Traverses serialized property trees to remap and validate nested <see cref="UnityEngine.LayerMask"/> values.</summary>
     public static class LayerMaskMigrationUtility {
+        /// <summary>Remaps all serialized <see cref="UnityEngine.LayerMask"/> properties in <paramref name="serializedObject"/>.</summary>
+        /// <returns>The number of properties whose mask value differs after remapping.</returns>
         public static int RemapLayerMasksInSerializedObject(SerializedObject serializedObject, IReadOnlyDictionary<int, int> remapTable, bool applyChanges) {
             var changedCount = 0;
             var iterator = serializedObject.GetIterator();
@@ -28,6 +31,8 @@ namespace LayerRemapper.Editor.LayerMigration {
             return changedCount;
         }
 
+        /// <summary>Counts serialized <see cref="UnityEngine.LayerMask"/> properties that still contain bits from <paramref name="oldLayerIndices"/>.</summary>
+        /// <returns>The number of <see cref="UnityEngine.LayerMask"/> properties that still reference old layers.</returns>
         public static int CountLayerMasksWithOldBits(SerializedObject serializedObject, IEnumerable<int> oldLayerIndices) {
             var count = 0;
             var iterator = serializedObject.GetIterator();

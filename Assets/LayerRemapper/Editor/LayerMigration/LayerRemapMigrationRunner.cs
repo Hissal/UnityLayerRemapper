@@ -6,15 +6,19 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace LayerRemapper.Editor.LayerMigration {
+    /// <summary>Coordinates scanning and migration/validation across prefabs, scenes, and serialized assets.</summary>
     internal static class LayerRemapMigrationRunner {
+        /// <summary>Runs a read-only migration pass and reports what would change.</summary>
         public static LayerRemapReport Preview(IReadOnlyList<LayerRemapEntry> entries) {
             return Execute(entries, false, false);
         }
 
+        /// <summary>Runs migration and writes modified serialized assets, prefabs, and scenes.</summary>
         public static LayerRemapReport Apply(IReadOnlyList<LayerRemapEntry> entries) {
             return Execute(entries, true, false);
         }
 
+        /// <summary>Runs validation-only scanning for remaining old layer usages.</summary>
         public static LayerRemapReport Validate(IReadOnlyList<LayerRemapEntry> entries) {
             return Execute(entries, false, true);
         }
@@ -158,6 +162,9 @@ namespace LayerRemapper.Editor.LayerMigration {
                         var changedLayerMasks = validationOnly
                             ? 0
                             : LayerMaskMigrationUtility.RemapLayerMasksInSerializedObject(serializedObject, remapTable, applyChanges);
+                        if (applyChanges && changedLayerMasks > 0)
+                            serializedObject.Update();
+
                         var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(serializedObject, oldLayers);
 
                         report.LayerMaskPropertiesChanged += changedLayerMasks;
@@ -192,7 +199,8 @@ namespace LayerRemapper.Editor.LayerMigration {
                         gameObject.layer = newLayer;
                 }
 
-                if (LayerMaskRemapper.ContainsAnyOldLayerBit(1 << originalLayer, oldLayers))
+                var layerForValidation = applyChanges ? gameObject.layer : originalLayer;
+                if (LayerMaskRemapper.ContainsAnyOldLayerBit(1 << layerForValidation, oldLayers))
                     report.RemainingGameObjectOldLayerUsages++;
 
                 var components = gameObject.GetComponents<Component>();
@@ -207,6 +215,9 @@ namespace LayerRemapper.Editor.LayerMigration {
                     var changedLayerMasks = validationOnly
                         ? 0
                         : LayerMaskMigrationUtility.RemapLayerMasksInSerializedObject(serializedObject, remapTable, applyChanges);
+                    if (applyChanges && changedLayerMasks > 0)
+                        serializedObject.Update();
+
                     var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(serializedObject, oldLayers);
 
                     if (changedLayerMasks > 0)

@@ -133,6 +133,7 @@ namespace LayerRemapper.Editor.LayerMigration {
     internal static class LayerTableUtility {
         private const string TagManagerPath = "ProjectSettings/TagManager.asset";
 
+        /// <summary>Captures current layer indices and names from <c>ProjectSettings/TagManager.asset</c>.</summary>
         public static List<LayerSnapshotEntry> CaptureCurrentLayerTable() {
             var result = new List<LayerSnapshotEntry>(32);
             var tagManagerObjects = AssetDatabase.LoadAllAssetsAtPath(TagManagerPath);
@@ -155,6 +156,8 @@ namespace LayerRemapper.Editor.LayerMigration {
             return result;
         }
 
+        /// <summary>Looks up the display name for <paramref name="layerIndex"/> within a snapshot/current layer table.</summary>
+        /// <returns>The layer name when found; otherwise an empty string.</returns>
         public static string GetLayerName(int layerIndex, IReadOnlyList<LayerSnapshotEntry> table) {
             for (var i = 0; i < table.Count; i++) {
                 if (table[i].Index == layerIndex)
