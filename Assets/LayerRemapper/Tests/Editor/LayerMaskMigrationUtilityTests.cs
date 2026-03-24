@@ -140,6 +140,30 @@ namespace LayerRemapper.Tests {
             }
         }
 
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_RemoveMode_EverythingMask_RemainsUnchanged() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 12 },
+                    true
+                );
+
+                Assert.That(changed, Is.EqualTo(0));
+                Assert.That(holder.singleMask.value, Is.EqualTo(-1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
         private static LayerMask MaskWith(int layerIndex) {
             return new LayerMask {
                 value = 1 << layerIndex
