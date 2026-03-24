@@ -11,7 +11,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         const string SnapshotAssetPath = SnapshotDirectory + "/LayerMigrationSnapshot.asset";
 
         readonly List<LayerRemapEntry> _entries = new();
-        [SerializeField] List<string> rootPaths = new();
+        [SerializeField] List<string> _rootPaths = new();
 
         LayerSnapshotAsset _snapshot;
         List<LayerSnapshotEntry> _currentLayers = new();
@@ -130,7 +130,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             EditorGUILayout.LabelField("5. Preview / Apply / Validation", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Preview Dry Run")) {
-                var report = LayerRemapMigrationRunner.Preview(_entries, rootPaths);
+                var report = LayerRemapMigrationRunner.Preview(_entries, _rootPaths);
                 SetReport(report);
             }
 
@@ -141,13 +141,13 @@ namespace LayerRemapper.Editor.LayerMigration {
                         "Apply",
                         "Cancel"
                     )) {
-                    var report = LayerRemapMigrationRunner.Apply(_entries, rootPaths);
+                    var report = LayerRemapMigrationRunner.Apply(_entries, _rootPaths);
                     SetReport(report);
                 }
             }
 
             if (GUILayout.Button("Validate Remaining Usages")) {
-                var report = LayerRemapMigrationRunner.Validate(_entries, rootPaths);
+                var report = LayerRemapMigrationRunner.Validate(_entries, _rootPaths);
                 SetReport(report);
             }
 
@@ -157,8 +157,8 @@ namespace LayerRemapper.Editor.LayerMigration {
         void DrawScanRootsSection() {
             EditorGUILayout.LabelField("4. Scan Roots", EditorStyles.boldLabel);
             var hasConfiguredRoots = false;
-            for (var i = 0; i < rootPaths.Count; i++) {
-                if (!string.IsNullOrWhiteSpace(rootPaths[i])) {
+            for (var i = 0; i < _rootPaths.Count; i++) {
+                if (!string.IsNullOrWhiteSpace(_rootPaths[i])) {
                     hasConfiguredRoots = true;
                     break;
                 }
@@ -170,15 +170,15 @@ namespace LayerRemapper.Editor.LayerMigration {
                     : "Scanning is restricted to assets under the configured root paths.",
                 MessageType.None
             );
-            var scanRootFilter = LayerMigrationScanRootFilter.Create(rootPaths);
+            var scanRootFilter = LayerMigrationScanRootFilter.Create(_rootPaths);
             for (var i = 0; i < scanRootFilter.Warnings.Count; i++)
                 EditorGUILayout.HelpBox(scanRootFilter.Warnings[i], MessageType.Warning);
 
-            for (var i = 0; i < rootPaths.Count; i++) {
+            for (var i = 0; i < _rootPaths.Count; i++) {
                 EditorGUILayout.BeginHorizontal();
-                rootPaths[i] = EditorGUILayout.TextField($"Root {i + 1}", rootPaths[i]);
+                _rootPaths[i] = EditorGUILayout.TextField($"Root {i + 1}", _rootPaths[i]);
                 if (GUILayout.Button("Remove", GUILayout.Width(90f))) {
-                    rootPaths.RemoveAt(i);
+                    _rootPaths.RemoveAt(i);
                     EditorGUILayout.EndHorizontal();
                     break;
                 }
@@ -188,15 +188,15 @@ namespace LayerRemapper.Editor.LayerMigration {
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Add Root Path"))
-                rootPaths.Add("Assets/");
+                _rootPaths.Add("Assets/");
 
             if (GUILayout.Button("Use Default (Assets/)")) {
-                rootPaths.Clear();
-                rootPaths.Add("Assets/");
+                _rootPaths.Clear();
+                _rootPaths.Add("Assets/");
             }
 
             if (GUILayout.Button("Clear Root Paths"))
-                rootPaths.Clear();
+                _rootPaths.Clear();
 
             EditorGUILayout.EndHorizontal();
         }
