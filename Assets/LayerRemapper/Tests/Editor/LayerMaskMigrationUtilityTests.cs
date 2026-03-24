@@ -164,6 +164,27 @@ namespace LayerRemapper.Tests {
             }
         }
 
+        [Test]
+        public void CountLayerMasksWithOldBits_EverythingMask_IsNotCountedAsRemainingUsage() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+                holder.nested = new NestedMaskData {
+                    mask = MaskWith(12)
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(serializedObject, new[] { 12 });
+
+                Assert.That(leftovers, Is.EqualTo(1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
         private static LayerMask MaskWith(int layerIndex) {
             return new LayerMask {
                 value = 1 << layerIndex

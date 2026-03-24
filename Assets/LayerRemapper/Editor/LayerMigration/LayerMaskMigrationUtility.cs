@@ -101,6 +101,9 @@ namespace LayerRemapper.Editor.LayerMigration {
                 if (!IsLayerMaskProperty(iterator))
                     continue;
 
+                if (iterator.intValue == -1)
+                    continue;
+
                 if (LayerMaskRemapper.ContainsAnyOldLayerBit(iterator.intValue, oldLayerIndices))
                     count++;
             }
