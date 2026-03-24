@@ -74,7 +74,7 @@ namespace LayerRemapper.Editor.LayerMigration {
 
             foreach (var remapPair in remapTable) {
                 if (removeLayers.Contains(remapPair.Value))
-                    report.AddWarning($"Remap target layer {remapPair.Value} is configured for removal. Remapped values to this layer will be cleared.");
+                    report.AddWarning($"Target layer {remapPair.Value} is both a remap destination and marked for removal. LayerMask values remapped to this layer will then be cleared. Review your migration configuration.");
             }
 
             return new LayerMigrationPlan(remapTable, removeLayers, new List<int>(operationBySourceLayer.Keys));
@@ -257,12 +257,17 @@ namespace LayerRemapper.Editor.LayerMigration {
             return changedAny;
         }
 
+        /// <summary>Migration collections computed once from enabled entries before any asset traversal begins.</summary>
         readonly struct LayerMigrationPlan {
-            public readonly Dictionary<int, int> RemapTable;
+            /// <summary>Remap rules keyed by source layer index.</summary>
+            public readonly IReadOnlyDictionary<int, int> RemapTable;
+            /// <summary>Source layer indices configured for remove mode.</summary>
             public readonly HashSet<int> RemoveLayers;
-            public readonly List<int> SourceLayers;
+            /// <summary>All configured source layer indices used by validation, including remap and remove operations.</summary>
+            public readonly IReadOnlyList<int> SourceLayers;
 
-            public LayerMigrationPlan(Dictionary<int, int> remapTable, HashSet<int> removeLayers, List<int> sourceLayers) {
+            /// <summary>Creates a migration plan from prebuilt remap, remove, and source-layer collections.</summary>
+            public LayerMigrationPlan(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IReadOnlyList<int> sourceLayers) {
                 RemapTable = remapTable;
                 RemoveLayers = removeLayers;
                 SourceLayers = sourceLayers;

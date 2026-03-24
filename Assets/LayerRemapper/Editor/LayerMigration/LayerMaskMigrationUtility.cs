@@ -33,7 +33,7 @@ namespace LayerRemapper.Editor.LayerMigration {
 
         /// <summary>Applies remap and remove migration rules to serialized <see cref="UnityEngine.LayerMask"/> properties in <paramref name="serializedObject"/>.</summary>
         /// <returns>The number of properties whose mask value differs after clearing layer bits.</returns>
-        public static int MigrateLayerMasksInSerializedObject(SerializedObject serializedObject, IReadOnlyDictionary<int, int> remapTable, IReadOnlyCollection<int> layerIndicesToRemove, bool applyChanges) {
+        public static int MigrateLayerMasksInSerializedObject(SerializedObject serializedObject, IReadOnlyDictionary<int, int> remapTable, HashSet<int> layerIndicesToRemove, bool applyChanges) {
             var changedCount = 0;
             var iterator = serializedObject.GetIterator();
             var enterChildren = true;
@@ -59,31 +59,35 @@ namespace LayerRemapper.Editor.LayerMigration {
             return changedCount;
         }
 
-        static int MigrateMask(int mask, IReadOnlyDictionary<int, int> remapTable, IReadOnlyCollection<int> layerIndicesToRemove) {
-            if (layerIndicesToRemove.Count == 0)
-                return LayerMaskRemapper.RemapMask(mask, remapTable);
+        /// <summary>Applies remap and remove rules to a single <see cref="UnityEngine.LayerMask"/> value.</summary>
+        /// <param name="mask">Source mask value to migrate.</param>
+        /// <param name="remapTable">Remap rules keyed by source layer index.</param>
+        /// <param name="layerIndicesToRemove">Layer indices whose bits should be removed from the output.</param>
+        /// <returns>Migrated mask value after remap and remove rules are applied.</returns>
+        static int MigrateMask(int mask, IReadOnlyDictionary<int, int> remapTable, HashSet<int> layerIndicesToRemove) {
+            if (mask == -1)
+                return -1;
 
-            var migratedMask = 0;
+            if (remapTable.Count == 0 && layerIndicesToRemove.Count == 0)
+                return mask;
+
+            var resultMask = 0;
             for (var layerIndex = 0; layerIndex < 32; layerIndex++) {
                 if (!LayerMaskRemapper.ContainsLayerBit(mask, layerIndex))
                     continue;
 
                 if (remapTable.TryGetValue(layerIndex, out var targetLayer)) {
-                    migratedMask |= 1 << targetLayer;
+                    resultMask |= 1 << targetLayer;
                     continue;
                 }
 
                 if (layerIndicesToRemove.Contains(layerIndex))
                     continue;
 
-                migratedMask |= 1 << layerIndex;
+                resultMask |= 1 << layerIndex;
             }
 
-            foreach (var layerIndex in layerIndicesToRemove) {
-                migratedMask = LayerMaskRemapper.ClearLayerBit(migratedMask, layerIndex);
-            }
-
-            return migratedMask;
+            return resultMask;
         }
 
         /// <summary>Counts serialized <see cref="UnityEngine.LayerMask"/> properties that still contain bits from <paramref name="oldLayerIndices"/>.</summary>

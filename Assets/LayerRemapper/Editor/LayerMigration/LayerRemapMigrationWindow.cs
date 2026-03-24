@@ -84,7 +84,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         }
 
         void DrawRemapEntriesSection() {
-            EditorGUILayout.LabelField("3. Remap Entries", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("3. Migration Entries", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("Operations use source layer indices as source of truth. Names are display-only.", MessageType.None);
             if (GUILayout.Button("Add Entry")) {
                 _entries.Add(new LayerRemapEntry());
@@ -116,7 +116,6 @@ namespace LayerRemapper.Editor.LayerMigration {
                     EditorGUILayout.LabelField("New Layer Name", string.IsNullOrEmpty(entry.NewLayerName) ? "<unknown/empty>" : entry.NewLayerName);
                 }
                 else {
-                    entry.NewLayerName = "Default";
                     EditorGUILayout.LabelField("Removal Result", "GameObject.layer -> Default (0), LayerMask bit cleared");
                 }
 
