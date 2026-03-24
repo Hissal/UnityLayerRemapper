@@ -11,6 +11,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         const string SnapshotAssetPath = SnapshotDirectory + "/LayerMigrationSnapshot.asset";
 
         readonly List<LayerRemapEntry> _entries = new();
+        [SerializeField] List<string> rootPaths = new();
 
         LayerSnapshotAsset _snapshot;
         List<LayerSnapshotEntry> _currentLayers = new();
@@ -40,6 +41,8 @@ namespace LayerRemapper.Editor.LayerMigration {
             DrawCurrentLayerSection();
             EditorGUILayout.Space();
             DrawRemapEntriesSection();
+            EditorGUILayout.Space();
+            DrawScanRootsSection();
             EditorGUILayout.Space();
             DrawActionsSection();
             EditorGUILayout.Space();
@@ -124,10 +127,10 @@ namespace LayerRemapper.Editor.LayerMigration {
         }
 
         void DrawActionsSection() {
-            EditorGUILayout.LabelField("4. Preview / Apply / Validation", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("5. Preview / Apply / Validation", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Preview Dry Run")) {
-                var report = LayerRemapMigrationRunner.Preview(_entries);
+                var report = LayerRemapMigrationRunner.Preview(_entries, rootPaths);
                 SetReport(report);
             }
 
@@ -138,21 +141,68 @@ namespace LayerRemapper.Editor.LayerMigration {
                         "Apply",
                         "Cancel"
                     )) {
-                    var report = LayerRemapMigrationRunner.Apply(_entries);
+                    var report = LayerRemapMigrationRunner.Apply(_entries, rootPaths);
                     SetReport(report);
                 }
             }
 
             if (GUILayout.Button("Validate Remaining Usages")) {
-                var report = LayerRemapMigrationRunner.Validate(_entries);
+                var report = LayerRemapMigrationRunner.Validate(_entries, rootPaths);
                 SetReport(report);
             }
 
             EditorGUILayout.EndHorizontal();
         }
 
+        void DrawScanRootsSection() {
+            EditorGUILayout.LabelField("4. Scan Roots", EditorStyles.boldLabel);
+            var hasConfiguredRoots = false;
+            for (var i = 0; i < rootPaths.Count; i++) {
+                if (!string.IsNullOrWhiteSpace(rootPaths[i])) {
+                    hasConfiguredRoots = true;
+                    break;
+                }
+            }
+
+            EditorGUILayout.HelpBox(
+                !hasConfiguredRoots
+                    ? "No root paths configured. Full-project scan under Assets/ will be used."
+                    : "Scanning is restricted to assets under the configured root paths.",
+                MessageType.None
+            );
+            var scanRootFilter = LayerMigrationScanRootFilter.Create(rootPaths);
+            for (var i = 0; i < scanRootFilter.Warnings.Count; i++)
+                EditorGUILayout.HelpBox(scanRootFilter.Warnings[i], MessageType.Warning);
+
+            for (var i = 0; i < rootPaths.Count; i++) {
+                EditorGUILayout.BeginHorizontal();
+                rootPaths[i] = EditorGUILayout.TextField($"Root {i + 1}", rootPaths[i]);
+                if (GUILayout.Button("Remove", GUILayout.Width(90f))) {
+                    rootPaths.RemoveAt(i);
+                    EditorGUILayout.EndHorizontal();
+                    break;
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Add Root Path"))
+                rootPaths.Add("Assets/");
+
+            if (GUILayout.Button("Use Default (Assets/)")) {
+                rootPaths.Clear();
+                rootPaths.Add("Assets/");
+            }
+
+            if (GUILayout.Button("Clear Root Paths"))
+                rootPaths.Clear();
+
+            EditorGUILayout.EndHorizontal();
+        }
+
         void DrawReportSection() {
-            EditorGUILayout.LabelField("5. Report", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("6. Report", EditorStyles.boldLabel);
             if (string.IsNullOrEmpty(_reportText))
                 EditorGUILayout.HelpBox("Run preview, apply, or validation to generate a report.", MessageType.Info);
             else
