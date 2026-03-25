@@ -5,6 +5,12 @@ using UnityEditor;
 using UnityEngine;
 
 namespace LayerRemapper.Editor.LayerMigration {
+    internal enum EverythingMaskRetentionMode {
+        NoRetain = 0,
+        RetainTrueEverythingOnly = 1,
+        RetainTrueAndSemanticEverything = 2
+    }
+
     internal enum LayerMigrationOperationType {
         Remap = 0,
         Remove = 1
@@ -101,6 +107,10 @@ namespace LayerRemapper.Editor.LayerMigration {
         public int MissingScriptsEncountered { get; set; }
         public int RemainingGameObjectOldLayerUsages { get; set; }
         public int RemainingLayerMaskOldLayerUsages { get; set; }
+        public EverythingMaskRetentionMode EverythingRetentionMode { get; set; } = EverythingMaskRetentionMode.RetainTrueEverythingOnly;
+        public int SemanticEverythingMask { get; set; }
+        public int SkippedTrueEverythingMasks { get; set; }
+        public int SkippedSemanticEverythingMasks { get; set; }
 
         public IReadOnlyList<string> ChangedAssets => _changedAssets;
         public IReadOnlyList<string> ScanRoots => _scanRoots;
@@ -154,6 +164,10 @@ namespace LayerRemapper.Editor.LayerMigration {
             builder.AppendLine($"GameObject.layer changes: {GameObjectLayersChanged}");
             builder.AppendLine($"LayerMask property changes: {LayerMaskPropertiesChanged}");
             builder.AppendLine($"Missing scripts encountered: {MissingScriptsEncountered}");
+            builder.AppendLine($"Everything retention mode: {EverythingRetentionMode}");
+            builder.AppendLine($"Semantic Everything mask: {SemanticEverythingMask}");
+            builder.AppendLine($"Skipped true Everything masks: {SkippedTrueEverythingMasks}");
+            builder.AppendLine($"Skipped semantic Everything masks: {SkippedSemanticEverythingMasks}");
             builder.AppendLine($"Remaining source GameObject.layer usages: {RemainingGameObjectOldLayerUsages}");
             builder.AppendLine($"Remaining source LayerMask usages: {RemainingLayerMaskOldLayerUsages}");
 

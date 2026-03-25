@@ -10,38 +10,55 @@ namespace LayerRemapper.Editor.LayerMigration {
     internal static class LayerRemapMigrationRunner {
         /// <summary>Runs a read-only migration pass and reports what would change.</summary>
         public static LayerRemapReport Preview(IReadOnlyList<LayerRemapEntry> entries) {
-            return Preview(entries, null);
+            return Preview(entries, null, EverythingMaskRetentionMode.RetainTrueEverythingOnly);
         }
 
         /// <summary>Runs a read-only migration pass and reports what would change under the configured scan roots.</summary>
         public static LayerRemapReport Preview(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths) {
-            return Execute(entries, false, false, rootPaths);
+            return Preview(entries, rootPaths, EverythingMaskRetentionMode.RetainTrueEverythingOnly);
+        }
+
+        /// <summary>Runs a read-only migration pass and reports what would change under the configured scan roots and Everything retention mode.</summary>
+        public static LayerRemapReport Preview(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths, EverythingMaskRetentionMode retentionMode) {
+            return Execute(entries, false, false, rootPaths, retentionMode);
         }
 
         /// <summary>Runs migration and writes modified serialized assets, prefabs, and scenes.</summary>
         public static LayerRemapReport Apply(IReadOnlyList<LayerRemapEntry> entries) {
-            return Apply(entries, null);
+            return Apply(entries, null, EverythingMaskRetentionMode.RetainTrueEverythingOnly);
         }
 
         /// <summary>Runs migration and writes modified serialized assets, prefabs, and scenes under the configured scan roots.</summary>
         public static LayerRemapReport Apply(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths) {
-            return Execute(entries, true, false, rootPaths);
+            return Apply(entries, rootPaths, EverythingMaskRetentionMode.RetainTrueEverythingOnly);
+        }
+
+        /// <summary>Runs migration and writes modified serialized assets, prefabs, and scenes under the configured scan roots and Everything retention mode.</summary>
+        public static LayerRemapReport Apply(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths, EverythingMaskRetentionMode retentionMode) {
+            return Execute(entries, true, false, rootPaths, retentionMode);
         }
 
         /// <summary>Runs validation-only scanning for remaining old layer usages.</summary>
         public static LayerRemapReport Validate(IReadOnlyList<LayerRemapEntry> entries) {
-            return Validate(entries, null);
+            return Validate(entries, null, EverythingMaskRetentionMode.RetainTrueEverythingOnly);
         }
 
         /// <summary>Runs validation-only scanning for remaining old layer usages under the configured scan roots.</summary>
         public static LayerRemapReport Validate(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths) {
-            return Execute(entries, false, true, rootPaths);
+            return Validate(entries, rootPaths, EverythingMaskRetentionMode.RetainTrueEverythingOnly);
         }
 
-        static LayerRemapReport Execute(IReadOnlyList<LayerRemapEntry> entries, bool applyChanges, bool validationOnly, IReadOnlyList<string> rootPaths) {
+        /// <summary>Runs validation-only scanning for remaining old layer usages under the configured scan roots and Everything retention mode.</summary>
+        public static LayerRemapReport Validate(IReadOnlyList<LayerRemapEntry> entries, IReadOnlyList<string> rootPaths, EverythingMaskRetentionMode retentionMode) {
+            return Execute(entries, false, true, rootPaths, retentionMode);
+        }
+
+        static LayerRemapReport Execute(IReadOnlyList<LayerRemapEntry> entries, bool applyChanges, bool validationOnly, IReadOnlyList<string> rootPaths, EverythingMaskRetentionMode retentionMode) {
             var report = new LayerRemapReport {
                 DryRun = !applyChanges,
-                IsValidationOnly = validationOnly
+                IsValidationOnly = validationOnly,
+                EverythingRetentionMode = retentionMode,
+                SemanticEverythingMask = LayerMaskMigrationUtility.BuildSemanticEverythingMask()
             };
             var scanRootFilter = LayerMigrationScanRootFilter.Create(rootPaths);
             report.SetScanRoots(scanRootFilter.Roots, scanRootFilter.IsFullProjectScan);
@@ -52,9 +69,9 @@ namespace LayerRemapper.Editor.LayerMigration {
             if (migrationPlan.SourceLayers.Count == 0)
                 report.AddWarning("No enabled migration entries found.");
 
-            ProcessPrefabs(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, report);
-            ProcessScenes(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, report);
-            ProcessOtherAssets(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, report);
+            ProcessPrefabs(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, retentionMode, report.SemanticEverythingMask, report);
+            ProcessScenes(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, retentionMode, report.SemanticEverythingMask, report);
+            ProcessOtherAssets(migrationPlan.RemapTable, migrationPlan.RemoveLayers, migrationPlan.SourceLayers, scanRootFilter, applyChanges, validationOnly, retentionMode, report.SemanticEverythingMask, report);
 
             if (applyChanges)
                 AssetDatabase.SaveAssets();
@@ -99,7 +116,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             return new LayerMigrationPlan(remapTable, removeLayers, new List<int>(operationBySourceLayer.Keys));
         }
 
-        static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessPrefabs(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, EverythingMaskRetentionMode retentionMode, int semanticEverythingMask, LayerRemapReport report) {
             var prefabGuids = AssetDatabase.FindAssets("t:Prefab", scanRootFilter.SearchFoldersArray);
             foreach (var guid in prefabGuids) {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
@@ -112,7 +129,7 @@ namespace LayerRemapper.Editor.LayerMigration {
                 GameObject prefabRoot = null;
                 try {
                     prefabRoot = PrefabUtility.LoadPrefabContents(path);
-                    var changed = ProcessGameObjectHierarchy(prefabRoot, remapTable, removeLayers, sourceLayers, applyChanges, validationOnly, report);
+                    var changed = ProcessGameObjectHierarchy(prefabRoot, remapTable, removeLayers, sourceLayers, applyChanges, validationOnly, retentionMode, semanticEverythingMask, report);
                     if (applyChanges && changed)
                         PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
 
@@ -131,7 +148,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessScenes(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, EverythingMaskRetentionMode retentionMode, int semanticEverythingMask, LayerRemapReport report) {
             var previousSetup = EditorSceneManager.GetSceneManagerSetup();
             try {
                 var sceneGuids = AssetDatabase.FindAssets("t:Scene", scanRootFilter.SearchFoldersArray);
@@ -148,7 +165,7 @@ namespace LayerRemapper.Editor.LayerMigration {
                         var changed = false;
                         var roots = scene.GetRootGameObjects();
                         for (var i = 0; i < roots.Length; i++) {
-                            if (ProcessGameObjectHierarchy(roots[i], remapTable, removeLayers, sourceLayers, applyChanges, validationOnly, report))
+                            if (ProcessGameObjectHierarchy(roots[i], remapTable, removeLayers, sourceLayers, applyChanges, validationOnly, retentionMode, semanticEverythingMask, report))
                                 changed = true;
                         }
 
@@ -172,7 +189,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        static void ProcessOtherAssets(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static void ProcessOtherAssets(IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, LayerMigrationScanRootFilter scanRootFilter, bool applyChanges, bool validationOnly, EverythingMaskRetentionMode retentionMode, int semanticEverythingMask, LayerRemapReport report) {
             var allPaths = AssetDatabase.GetAllAssetPaths();
             var scannedPaths = new HashSet<string>();
             foreach (var path in allPaths) {
@@ -200,16 +217,25 @@ namespace LayerRemapper.Editor.LayerMigration {
 
                     try {
                         var serializedObject = new SerializedObject(asset);
+                        var skipCounts = new LayerMaskMigrationUtility.EverythingMaskSkipCounts();
                         var changedLayerMasks = validationOnly
                             ? 0
-                            : LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, remapTable, removeLayers, applyChanges);
+                            : LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, remapTable, removeLayers, applyChanges, retentionMode, semanticEverythingMask, skipCounts);
                         if (applyChanges && changedLayerMasks > 0)
                             serializedObject.Update();
 
-                        var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(serializedObject, sourceLayers);
+                        var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(
+                            serializedObject,
+                            sourceLayers,
+                            retentionMode,
+                            semanticEverythingMask,
+                            validationOnly ? skipCounts : null
+                        );
 
                         report.LayerMaskPropertiesChanged += changedLayerMasks;
                         report.RemainingLayerMaskOldLayerUsages += leftovers;
+                        report.SkippedTrueEverythingMasks += skipCounts.TrueEverythingMasksSkipped;
+                        report.SkippedSemanticEverythingMasks += skipCounts.SemanticEverythingMasksSkipped;
 
                         if (changedLayerMasks > 0) {
                             changedInPath = true;
@@ -229,7 +255,7 @@ namespace LayerRemapper.Editor.LayerMigration {
             }
         }
 
-        static bool ProcessGameObjectHierarchy(GameObject root, IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, bool applyChanges, bool validationOnly, LayerRemapReport report) {
+        static bool ProcessGameObjectHierarchy(GameObject root, IReadOnlyDictionary<int, int> remapTable, HashSet<int> removeLayers, IEnumerable<int> sourceLayers, bool applyChanges, bool validationOnly, EverythingMaskRetentionMode retentionMode, int semanticEverythingMask, LayerRemapReport report) {
             var changedAny = false;
             var transforms = root.GetComponentsInChildren<Transform>(true);
             for (var i = 0; i < transforms.Length; i++) {
@@ -261,19 +287,28 @@ namespace LayerRemapper.Editor.LayerMigration {
                     }
 
                     var serializedObject = new SerializedObject(component);
+                    var skipCounts = new LayerMaskMigrationUtility.EverythingMaskSkipCounts();
                     var changedLayerMasks = validationOnly
                         ? 0
-                        : LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, remapTable, removeLayers, applyChanges);
+                        : LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(serializedObject, remapTable, removeLayers, applyChanges, retentionMode, semanticEverythingMask, skipCounts);
                     if (applyChanges && changedLayerMasks > 0)
                         serializedObject.Update();
 
-                    var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(serializedObject, sourceLayers);
+                    var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(
+                        serializedObject,
+                        sourceLayers,
+                        retentionMode,
+                        semanticEverythingMask,
+                        validationOnly ? skipCounts : null
+                    );
 
                     if (changedLayerMasks > 0)
                         changedAny = true;
 
                     report.LayerMaskPropertiesChanged += changedLayerMasks;
                     report.RemainingLayerMaskOldLayerUsages += leftovers;
+                    report.SkippedTrueEverythingMasks += skipCounts.TrueEverythingMasksSkipped;
+                    report.SkippedSemanticEverythingMasks += skipCounts.SemanticEverythingMasksSkipped;
                 }
             }
 

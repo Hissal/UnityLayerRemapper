@@ -12,6 +12,7 @@ namespace LayerRemapper.Editor.LayerMigration {
 
         readonly List<LayerRemapEntry> _entries = new();
         [SerializeField] List<string> _rootPaths = new();
+        [SerializeField] EverythingMaskRetentionMode _everythingMaskRetentionMode = EverythingMaskRetentionMode.RetainTrueEverythingOnly;
 
         LayerSnapshotAsset _snapshot;
         List<LayerSnapshotEntry> _currentLayers = new();
@@ -41,6 +42,8 @@ namespace LayerRemapper.Editor.LayerMigration {
             DrawCurrentLayerSection();
             EditorGUILayout.Space();
             DrawRemapEntriesSection();
+            EditorGUILayout.Space();
+            DrawEverythingMaskRetentionSection();
             EditorGUILayout.Space();
             DrawScanRootsSection();
             EditorGUILayout.Space();
@@ -127,10 +130,10 @@ namespace LayerRemapper.Editor.LayerMigration {
         }
 
         void DrawActionsSection() {
-            EditorGUILayout.LabelField("5. Preview / Apply / Validation", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("6. Preview / Apply / Validation", EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Preview Dry Run")) {
-                var report = LayerRemapMigrationRunner.Preview(_entries, _rootPaths);
+                var report = LayerRemapMigrationRunner.Preview(_entries, _rootPaths, _everythingMaskRetentionMode);
                 SetReport(report);
             }
 
@@ -141,13 +144,13 @@ namespace LayerRemapper.Editor.LayerMigration {
                         "Apply",
                         "Cancel"
                     )) {
-                    var report = LayerRemapMigrationRunner.Apply(_entries, _rootPaths);
+                    var report = LayerRemapMigrationRunner.Apply(_entries, _rootPaths, _everythingMaskRetentionMode);
                     SetReport(report);
                 }
             }
 
             if (GUILayout.Button("Validate Remaining Usages")) {
-                var report = LayerRemapMigrationRunner.Validate(_entries, _rootPaths);
+                var report = LayerRemapMigrationRunner.Validate(_entries, _rootPaths, _everythingMaskRetentionMode);
                 SetReport(report);
             }
 
@@ -155,7 +158,7 @@ namespace LayerRemapper.Editor.LayerMigration {
         }
 
         void DrawScanRootsSection() {
-            EditorGUILayout.LabelField("4. Scan Roots", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("5. Scan Roots", EditorStyles.boldLabel);
             var scanRootFilter = LayerMigrationScanRootFilter.Create(_rootPaths);
             EditorGUILayout.HelpBox(
                 scanRootFilter.IsFullProjectScan
@@ -193,8 +196,19 @@ namespace LayerRemapper.Editor.LayerMigration {
             EditorGUILayout.EndHorizontal();
         }
 
+        void DrawEverythingMaskRetentionSection() {
+            EditorGUILayout.LabelField("4. Everything Mask Retention", EditorStyles.boldLabel);
+            _everythingMaskRetentionMode = (EverythingMaskRetentionMode)EditorGUILayout.EnumPopup("Everything Mask Retention", _everythingMaskRetentionMode);
+            EditorGUILayout.HelpBox("Controls whether LayerMasks representing Everything are preserved during remap/remove operations and validation.", MessageType.None);
+            EditorGUILayout.HelpBox("True Everything is the raw sentinel value -1. Semantic Everything is a finite mask equal to all currently defined layer slots.", MessageType.Info);
+            if (_everythingMaskRetentionMode == EverythingMaskRetentionMode.RetainTrueAndSemanticEverything)
+                EditorGUILayout.HelpBox("Semantic Everything depends on the currently defined layers in this project.", MessageType.Warning);
+
+            EditorGUILayout.LabelField("Current semantic Everything mask", LayerMaskMigrationUtility.BuildSemanticEverythingMask().ToString());
+        }
+
         void DrawReportSection() {
-            EditorGUILayout.LabelField("6. Report", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("7. Report", EditorStyles.boldLabel);
             if (string.IsNullOrEmpty(_reportText))
                 EditorGUILayout.HelpBox("Run preview, apply, or validation to generate a report.", MessageType.Info);
             else

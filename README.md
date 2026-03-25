@@ -24,7 +24,10 @@ It helps you remap old layer indices to new ones in bulk, remove deprecated laye
 
 Migration is index-based (names are display-only), and follows these rules:
 
-- `LayerMask` **Everything** (`-1`) is preserved as-is.
+- `LayerMask` **Everything** handling is configurable in the migration window:
+  - `NoRetain`: process true and semantic Everything masks like normal masks
+  - `RetainTrueEverythingOnly`: preserve only true `-1` sentinel masks
+  - `RetainTrueAndSemanticEverything`: preserve true `-1` and finite semantic Everything masks
 - Unmapped bits are preserved.
 - Multi-source to single-destination is supported (destination bit is set once).
 - Swap remaps are safe (example: `11 <-> 14`): if both source bits are set, both remain set after remap.
