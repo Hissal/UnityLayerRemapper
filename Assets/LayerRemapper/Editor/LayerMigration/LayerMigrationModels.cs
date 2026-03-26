@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 
 namespace LayerRemapper.Editor.LayerMigration {
-    internal enum EverythingMaskRetentionMode {
+    public enum EverythingMaskRetentionMode {
         NoRetain = 0,
         RetainTrueEverythingOnly = 1,
         RetainTrueAndSemanticEverything = 2
