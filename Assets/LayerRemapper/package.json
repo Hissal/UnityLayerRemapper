@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "displayName": "Unity Layer Remapper",
   "description": "Editor tooling for project-wide Unity layer remapping migrations, including LayerMask and GameObject.layer updates across serialized assets.",
-  "unity": "6000.4",
+  "unity": "6000.x",
   "author": {
     "name": "Hissal"
   },
