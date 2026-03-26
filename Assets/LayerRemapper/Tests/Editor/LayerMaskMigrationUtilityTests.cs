@@ -165,6 +165,165 @@ namespace LayerRemapper.Tests {
         }
 
         [Test]
+        public void MigrateLayerMasksInSerializedObject_NoRetain_TrueEverythingMask_IsProcessedNormally() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 12 },
+                    true,
+                    EverythingMaskRetentionMode.NoRetain,
+                    0
+                );
+
+                Assert.That(changed, Is.EqualTo(1));
+                Assert.That(holder.singleMask.value, Is.EqualTo(-1 & ~(1 << 12)));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_RetainTrueEverythingOnly_TrueEverythingMask_IsPreserved() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 12 },
+                    true,
+                    EverythingMaskRetentionMode.RetainTrueEverythingOnly,
+                    0
+                );
+
+                Assert.That(changed, Is.EqualTo(0));
+                Assert.That(holder.singleMask.value, Is.EqualTo(-1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_RetainTrueAndSemanticEverything_TrueEverythingMask_IsPreserved() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 12 },
+                    true,
+                    EverythingMaskRetentionMode.RetainTrueAndSemanticEverything,
+                    (1 << 3) | (1 << 5)
+                );
+
+                Assert.That(changed, Is.EqualTo(0));
+                Assert.That(holder.singleMask.value, Is.EqualTo(-1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_NoRetain_SemanticEverythingMask_IsProcessedNormally() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            const int semanticEverythingMask = (1 << 3) | (1 << 5);
+            try {
+                holder.singleMask = new LayerMask {
+                    value = semanticEverythingMask
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 5 },
+                    true,
+                    EverythingMaskRetentionMode.NoRetain,
+                    semanticEverythingMask
+                );
+
+                Assert.That(changed, Is.EqualTo(1));
+                Assert.That(holder.singleMask.value, Is.EqualTo(1 << 3));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_RetainTrueEverythingOnly_SemanticEverythingMask_IsProcessedNormally() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            const int semanticEverythingMask = (1 << 3) | (1 << 5);
+            try {
+                holder.singleMask = new LayerMask {
+                    value = semanticEverythingMask
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 5 },
+                    true,
+                    EverythingMaskRetentionMode.RetainTrueEverythingOnly,
+                    semanticEverythingMask
+                );
+
+                Assert.That(changed, Is.EqualTo(1));
+                Assert.That(holder.singleMask.value, Is.EqualTo(1 << 3));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void MigrateLayerMasksInSerializedObject_RetainTrueAndSemanticEverything_SemanticEverythingMask_IsPreserved() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            const int semanticEverythingMask = (1 << 3) | (1 << 5);
+            try {
+                holder.singleMask = new LayerMask {
+                    value = semanticEverythingMask
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var changed = LayerMaskMigrationUtility.MigrateLayerMasksInSerializedObject(
+                    serializedObject,
+                    new Dictionary<int, int>(),
+                    new HashSet<int> { 5 },
+                    true,
+                    EverythingMaskRetentionMode.RetainTrueAndSemanticEverything,
+                    semanticEverythingMask
+                );
+
+                Assert.That(changed, Is.EqualTo(0));
+                Assert.That(holder.singleMask.value, Is.EqualTo(semanticEverythingMask));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
         public void CountLayerMasksWithOldBits_EverythingMask_IsNotCountedAsRemainingUsage() {
             var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
             try {
@@ -183,6 +342,122 @@ namespace LayerRemapper.Tests {
             finally {
                 UnityEngine.Object.DestroyImmediate(holder);
             }
+        }
+
+        [Test]
+        public void CountLayerMasksWithOldBits_NoRetain_TrueEverythingMask_IsCountedWhenContainingSourceLayer() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(
+                    serializedObject,
+                    new[] { 12 },
+                    EverythingMaskRetentionMode.NoRetain,
+                    0
+                );
+
+                Assert.That(leftovers, Is.EqualTo(1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void CountLayerMasksWithOldBits_RetainTrueEverythingOnly_TrueEverythingMask_IsIgnored() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            try {
+                holder.singleMask = new LayerMask {
+                    value = -1
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(
+                    serializedObject,
+                    new[] { 12 },
+                    EverythingMaskRetentionMode.RetainTrueEverythingOnly,
+                    0
+                );
+
+                Assert.That(leftovers, Is.EqualTo(0));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void CountLayerMasksWithOldBits_NoRetain_SemanticEverythingMask_IsCountedWhenContainingSourceLayer() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            const int semanticEverythingMask = (1 << 3) | (1 << 5);
+            try {
+                holder.singleMask = new LayerMask {
+                    value = semanticEverythingMask
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(
+                    serializedObject,
+                    new[] { 5 },
+                    EverythingMaskRetentionMode.NoRetain,
+                    semanticEverythingMask
+                );
+
+                Assert.That(leftovers, Is.EqualTo(1));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void CountLayerMasksWithOldBits_RetainTrueAndSemanticEverything_SemanticEverythingMask_IsIgnored() {
+            var holder = ScriptableObject.CreateInstance<TestMaskHolder>();
+            const int semanticEverythingMask = (1 << 3) | (1 << 5);
+            try {
+                holder.singleMask = new LayerMask {
+                    value = semanticEverythingMask
+                };
+
+                var serializedObject = new SerializedObject(holder);
+                var leftovers = LayerMaskMigrationUtility.CountLayerMasksWithOldBits(
+                    serializedObject,
+                    new[] { 5 },
+                    EverythingMaskRetentionMode.RetainTrueAndSemanticEverything,
+                    semanticEverythingMask
+                );
+
+                Assert.That(leftovers, Is.EqualTo(0));
+            }
+            finally {
+                UnityEngine.Object.DestroyImmediate(holder);
+            }
+        }
+
+        [Test]
+        public void ShouldRetainMask_RespectsRetentionModes() {
+            const int semanticEverythingMask = (1 << 3) | (1 << 5);
+
+            Assert.That(
+                LayerMaskMigrationUtility.ShouldRetainMask(-1, EverythingMaskRetentionMode.NoRetain, semanticEverythingMask),
+                Is.False
+            );
+            Assert.That(
+                LayerMaskMigrationUtility.ShouldRetainMask(-1, EverythingMaskRetentionMode.RetainTrueEverythingOnly, semanticEverythingMask),
+                Is.True
+            );
+            Assert.That(
+                LayerMaskMigrationUtility.ShouldRetainMask(semanticEverythingMask, EverythingMaskRetentionMode.RetainTrueEverythingOnly, semanticEverythingMask),
+                Is.False
+            );
+            Assert.That(
+                LayerMaskMigrationUtility.ShouldRetainMask(semanticEverythingMask, EverythingMaskRetentionMode.RetainTrueAndSemanticEverything, semanticEverythingMask),
+                Is.True
+            );
         }
 
         private static LayerMask MaskWith(int layerIndex) {
